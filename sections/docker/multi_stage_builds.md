@@ -19,8 +19,10 @@ Let's imagine the following directory structure
   - README.md
 ```
 
-Your [.dockerignore](/sections/docker/dockerignore.md) will already filter out files that won't be needed for building and running your application.
+Your [.dockerignore](../docker/docker-ignore.md) will already filter out files that won't be needed for building and running your application.
 
+
+sections/docker/docker-ignore.md
 ```
 # Don't copy in existing node_modules, we'll fetch our own
 node_modules
@@ -31,11 +33,13 @@ docs
 
 #### Dockerfile with multiple stages
 
+Since Docker is often used in continuous integration environments it is recommended to use the `npm ci` command (instead of `npm install`). It is faster, stricter and reduces inconsistencies by using only the versions specified in the package-lock.json file. See [here](https://docs.npmjs.com/cli/ci.html#description) for more info. This example uses yarn as package manager for which the equivalent to `npm ci` is the `yarn install --frozen-lockfile` [command](https://classic.yarnpkg.com/en/docs/cli/install/).
+
 ```dockerfile
 FROM node:14.4.0 AS build
 
 COPY --chown=node:node . .
-RUN yarn install && yarn build
+RUN yarn install --frozen-lockfile && yarn build
 
 FROM node:14.4.0
 
@@ -44,7 +48,7 @@ EXPOSE 8080
 
 # Copy results from previous stage
 COPY --chown=node:node --from=build /home/node/app/dist /home/node/app/package.json /home/node/app/yarn.lock ./
-RUN yarn install --production
+RUN yarn install --frozen-lockfile --production
 
 CMD [ "node", "dist/app.js" ]
 ```
@@ -55,7 +59,7 @@ CMD [ "node", "dist/app.js" ]
 FROM node:14.4.0 AS build
 
 COPY --chown=node:node . .
-RUN yarn install && yarn build
+RUN yarn install --frozen-lockfile && yarn build
 
 # This will use a minimal base image for the runtime
 FROM node:14.4.0-alpine
@@ -65,7 +69,7 @@ EXPOSE 8080
 
 # Copy results from previous stage
 COPY --chown=node:node --from=build /home/node/app/dist /home/node/app/package.json /home/node/app/yarn.lock ./
-RUN yarn install --production
+RUN yarn install --frozen-lockfile --production
 
 CMD [ "node", "dist/app.js" ]
 ```
